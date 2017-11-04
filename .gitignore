@@ -1,4 +1,6 @@
 #ignore
+.vscode
+
 *.o
 
 try_mosquitto
