@@ -1,0 +1,1 @@
+mosquitto_sub -u admin -P admin -h localhost -p 1883 -t /Dali/v1/AxMqttSerialDali/txDalicommand/ -q 1

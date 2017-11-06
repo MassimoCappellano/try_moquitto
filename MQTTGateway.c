@@ -29,6 +29,7 @@
 // added 
 #include <unistd.h>
       
+#include "circular_buf_typeCommandDali.h"
         
 /****************************************************************************/
 /***        Macro Definitions                                             ***/
@@ -52,40 +53,15 @@
 #define MAX_COMMAND_QUEUE 50
 
 #define NUM_MAX_VALUE         500
-#define MAX_COMMAND_QUEUE2     260
+
 #define MAXDMXTIMESTAMP 1000
 #define MAXDMXDALI 500
 #define MAX_CHANNELS  4
 #define DELTA_VALUE	  50
+
 /****************************************************************************/
 /***        Type Definitions                                              ***/
 /****************************************************************************/
-typedef struct stDevices
-{
-	char strMacAddress[17];				
-	char strMeasure[512];
-};
-
-// Comando Jennic
-typedef struct TypeCommand 
-{
-    char strCommand[256];
-};
-
-// Dali Master Command
-typedef struct TypeCommandDali
-{
-      char DaliCommand[100];
-      int DaliCommandLenght;
-};
-struct circBuf_t
-{
-      struct TypeCommandDali *buffer;
-      int head;
-      int tail;
-      int maxLen;
-};
-
 
 /****************************************************************************/
 /***        Local Function Prototypes                                     ***/
@@ -94,10 +70,6 @@ struct circBuf_t
 void *SerialThread(void *threadid);
 
 int copychar(char *source, char *destination,int n);
-
-int circBufPush(struct circBuf_t *cb, struct TypeCommandDali data);
-
-int circBufPop(struct circBuf_t *cb, struct TypeCommandDali *data);
 
 /****************************************************************************/
 /***        Local Variables                                               ***/
@@ -122,8 +94,11 @@ double diffTimeGetScene=0.0;
 // Dichiarazione Struct
 struct stDevices Device[150];
 // struct dmxdalitype lastCmd;
+
 struct TypeCommand Command[MAX_COMMAND_QUEUE]; 
-struct TypeCommandDali CommandDali[MAX_COMMAND_QUEUE2];
+// struct TypeCommandDali CommandDali[MAX_COMMAND_QUEUE2];
+
+// dichiarazione CB
 struct circBuf_t cb;
 
 
@@ -151,56 +126,6 @@ unsigned long timeCounterS = 0;
 /****************************************************************************/
 /***        Functions Definitions                                         ***/
 /****************************************************************************/
-
-/****************************************************************************
- *
- * NAME: circBufPush
- *
- * DESCRIPTION: inserisce un comando nel circular buffer
- * 
- * RETURNS:
- *
- ****************************************************************************/
-int circBufPush(struct circBuf_t *cb, struct TypeCommandDali data)
-{
-      int next = cb->head + 1;
-      if (next >= cb->maxLen)
-            next = 0;
-
-      // Cicular buffer is full
-      if (next == cb->tail)
-            return -1;  // quit with an error
-
-      cb->buffer[cb->head] = data;
-      cb->head = next;
-      return 0;
-}
-/****************************************************************************
- *
- * NAME: circBufPop
- *
- * DESCRIPTION: elimina un comando dal circular buffer
- * 
- * RETURNS:
- *
- ****************************************************************************/
-int circBufPop(struct circBuf_t *cb, struct TypeCommandDali *data)
-{
-      // if the head isn't ahead of the tail, we don't have any characters
-      if (cb->head == cb->tail)
-            return -1;  // quit with an error
-
-      *data = cb->buffer[cb->tail];
-      //cb->buffer[cb->tail] = 0;  // clear the data (optional)
-
-      int next = cb->tail + 1;
-      if (next >= cb->maxLen)
-            next = 0;
-
-      cb->tail = next;
-
-      return 0;
-}
 
 /****************************************************************************
  *
@@ -242,6 +167,10 @@ void my_message_callback(struct mosquitto *mosq, void *userdata, const struct mo
 	
 	printf("TOPIC: %s\n", message->topic);
 	printf("PAYLOAD: %s\n", message->payload);
+
+	struct TypeCommandDali data = { "PIPPO", 6};
+
+	circBufPush(&cb, data);
 	
 }
 
@@ -323,6 +252,8 @@ void my_log_callback(struct mosquitto *mosq, void *userdata, int level, const ch
  ****************************************************************************/
 void *SerialThread(void *threadid)
 {
+	printf("CALLED serial thread!!!!\n");
+
 	int State = 0;
 	volatile unsigned long timestampDMX=0; //contatore per il timestamp dei comandi
 	char *pDaliCmd;
@@ -380,11 +311,14 @@ void *SerialThread(void *threadid)
 */
 		
 	//setup circular buffer for dali comnmand
-	cb.buffer = &CommandDali[0];
+	/*
+	  cb.buffer = &CommandDali[0];
       cb.maxLen = MAX_COMMAND_QUEUE2;
       cb.tail = 0;
       cb.head = 0;
+	*/
 
+	init_circuler_buffer(&cb);
 
 	int rtdmxfound=0;
 	int i = 0;
@@ -395,6 +329,8 @@ void *SerialThread(void *threadid)
 	{
 		
 		// Thread loop
+
+		// printf("*** SONO IN SERIAL THREAD ******\n");
 		
 	}			
 			
@@ -445,7 +381,7 @@ int main(int argc, char *argv[])
 		}
 		else
 		{
-			printf("Creation Thread %d completed\n", t);
+			printf("Creation Thread %ld completed\n", t);
 		}	
 	}
 		
@@ -491,7 +427,7 @@ int main(int argc, char *argv[])
 			// Main loop
 			if (circBufPop(&cb, &data))
 			{
-                  //printf("CB is empty  \n\r");
+                  printf("CB is empty  %ld\n\r", time(NULL));
             }
             else
             {

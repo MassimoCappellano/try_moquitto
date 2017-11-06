@@ -1,5 +1,7 @@
+include .env
+
 #CFLAGS=-Wall -ggdb
-LDFLAGS=${HOME}/mosquitto-ssl/mosquitto-1.4.11/lib/libmosquitto.so.1 -lpthread
+LDFLAGS=${MY_MOSQUITTO_LIB}/libmosquitto.so.1 -lpthread
 
 .PHONY: all clean
 
@@ -13,8 +15,11 @@ try_mosquitto.o : try_mosquitto.c
 
 ###############################################
 
-MQTTGateway : MQTTGateway.o
+MQTTGateway : MQTTGateway.o circular_buf_typeCommandDali.o
 	${CC} $^ -o $@ ${LDFLAGS}
+
+circular_buf_typeCommandDali.o : circular_buf_typeCommandDali.c
+	${CC} -c $^ -o $@ ${CFLAGS} 
 
 MQTTGateway.o : MQTTGateway.c
 	${CC} -c $^ -o $@ ${CFLAGS} 

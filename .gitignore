@@ -1,7 +1,13 @@
 #ignore
 .vscode
 
+.env
+
 *.o
 
 try_mosquitto
+
+MQTTGateway
+
+test_circular_buf_typeCommandDati
 
