@@ -41,8 +41,6 @@
 // Thread							
 #define NUM_THREADS     1
 
-
-
 #define BAUDRATE B115200
 
 #define _POSIX_SOURCE 1 // POSIX compliant source 
@@ -84,7 +82,7 @@ char *MODEMDEVICE;
 char *MD = "/dev/ttyUSB0";
 
 // Topic
-char* s11="/Dali/v1/AxMqttSerialDali/txDalicommand/"; //dmx -> DALI topic usato x mandare comandi al dali
+char* daliTopic = "/Dali/v1/AxMqttSerialDali/txDalicommand/"; //dmx -> DALI topic usato x mandare comandi al dali
 
 time_t Time1,Time2,TimeThread1, TimeThread2, TimeGetScene, TimeGetSceneOld;
 double diff=0.0;
@@ -127,28 +125,6 @@ unsigned long timeCounterS = 0;
 /***        Functions Definitions                                         ***/
 /****************************************************************************/
 
-/****************************************************************************
- *
- * NAME: copychar
- *
- * DESCRIPTION:
- * 
- * RETURNS:		
- *
- ****************************************************************************/
-int copychar(char *source, char *destination, int n)
-{
-	int r;
-	
-	for (r = 0; r < n;r++)
-	{
-		*(destination + r) = *(source + r);
-	}
-	destination[n] = 0;
-	return 0;
-}
-
-
 /****************************************************************************/
 /***        Functions Callback                                         ***/
 /****************************************************************************/
@@ -163,14 +139,23 @@ int copychar(char *source, char *destination, int n)
  *
  ****************************************************************************/
 void my_message_callback(struct mosquitto *mosq, void *userdata, const struct mosquitto_message *message)
-{
+{   
+	// don't resend message sent on daliTopic
+
+	if(strcmp(message->topic, daliTopic) != 0) {
+
+		printf("----------------------------------->\n");
+		printf("TOPIC: %s\n", message->topic);
+		printf("PAYLOAD: %s\n", message->payload);
 	
-	printf("TOPIC: %s\n", message->topic);
-	printf("PAYLOAD: %s\n", message->payload);
+		struct TypeCommandDali data = { "PIPPO", 6};
+		printf("***********************************>\n");
+	
+		circBufPush(&cb, data);
 
-	struct TypeCommandDali data = { "PIPPO", 6};
+	}
 
-	circBufPush(&cb, data);
+	
 	
 }
 
@@ -191,7 +176,7 @@ void my_connect_callback(struct mosquitto *mosq, void *userdata, int result)
 	{
 		// Subscribe to broker information topics on successful connect (DALI command)
 
-		//mosquitto_subscribe(mosq, NULL, s11, 2);
+		//mosquitto_subscribe(mosq, NULL, daliTopic, 2);
 
 		// *********************************
 		mosquitto_subscribe(mosq, NULL, "#", 0);
@@ -217,12 +202,12 @@ void my_subscribe_callback(struct mosquitto *mosq, void *userdata, int mid, int 
 {
 	int i;
 
-	/*printf("Subscribed (mid: %d): %d", mid, granted_qos[0]);
+	printf("Subscribed (mid: %d): %d", mid, granted_qos[0]);
 	for(i=1; i<qos_count; i++)
 	{
 		printf(", %d", granted_qos[i]);
 	}
-	printf("\n");*/
+	printf("\n");
 }
 
 
@@ -238,7 +223,7 @@ void my_subscribe_callback(struct mosquitto *mosq, void *userdata, int mid, int 
 void my_log_callback(struct mosquitto *mosq, void *userdata, int level, const char *str)
 {
 	// Print all log messages regardless of level
-	//printf("%s\n", str);
+	printf("LOG: %s\n", str);
 }
 
 /****************************************************************************
@@ -343,8 +328,8 @@ void *SerialThread(void *threadid)
 /****************************************************************************/
 int main(int argc, char *argv[])
 {
-	char *id="JennetMQTTGateway";
-	int i;
+	char clientid[24];
+
 	char *host = "127.0.0.1"; //inserire ip gateway dali
 	int port = 1883;
 	int keepalive = 60;
@@ -384,9 +369,13 @@ int main(int argc, char *argv[])
 			printf("Creation Thread %ld completed\n", t);
 		}	
 	}
-		
+	
+	memset(clientid, 0, 24);
+	snprintf(clientid, 23, "JennetMQTTGateway_%d", getppid());
+
 	mosquitto_lib_init();
-	mosq = mosquitto_new(id, clean_session, NULL);
+	mosq = mosquitto_new(clientid, clean_session, NULL);
+
 	if(!mosq)
 	{
 		fprintf(stderr, "Error: Out of memory.\n");
@@ -435,7 +424,7 @@ int main(int argc, char *argv[])
             	printf("\nINVIO: lenght: %d\t", data.DaliCommandLenght);
             	printf("comando: |%s|  \n", data.DaliCommand);
             	
-				mosquitto_publish(mosq, &nMid, s11, data.DaliCommandLenght, data.DaliCommand, 0, false);
+				mosquitto_publish(mosq, &nMid, daliTopic, data.DaliCommandLenght, data.DaliCommand, 0, false);
 			}
 		
 		}

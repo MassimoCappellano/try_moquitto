@@ -15,8 +15,8 @@ void main() {
     
     struct TypeCommandDali data2 = { "PLUTO", 6};
     
-        circBufPush(&cb, data2);
-
+    circBufPush(&cb, data2);
+    
     struct TypeCommandDali dataOUT;
 
     if (circBufPop(&cb, &dataOUT))
