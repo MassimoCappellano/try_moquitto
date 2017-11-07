@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
 			mosq = mosquitto_new(clientid, true, NULL);
 
 			// added for username/password
-			mosquitto_username_pw_set(mosq, "admin", "admin");
+			// mosquitto_username_pw_set(mosq, "admin", "admin");
 
 			if(mosq){
 				mosquitto_connect_callback_set(mosq, connect_callback);

@@ -383,7 +383,7 @@ int main(int argc, char *argv[])
 	}
 
 	// added for username/password
-	mosquitto_username_pw_set(mosq, "admin", "admin");
+	// mosquitto_username_pw_set(mosq, "admin", "admin");
 	// ************************************
 	
 	mosquitto_log_callback_set(mosq, my_log_callback);
