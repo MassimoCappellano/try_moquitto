@@ -6,9 +6,8 @@ Create a `.env` file and set inside the file `MY_MOSQUITTO_LIB` variable. Use `.
 
 ## Clients
 
-`try_mosquitto.c` is a simple client similar to mosquitto's distribution examples.  
-
-`MQTTGateway.c` more elaborated client.
+* `try_mosquitto.c` is a simple client similar to mosquitto's distribution examples. 
+* `MQTTGateway.c` more elaborated client, used as template in ours applications.
 
 ## MOSQUITTO Broker
 
