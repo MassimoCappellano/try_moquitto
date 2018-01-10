@@ -12,3 +12,7 @@ Create a `.env` file and set inside the file `MY_MOSQUITTO_LIB` variable. Use `.
 ## MOSQUITTO Broker
 
 [Admin operations](MOSQUITTO_ADMINISTRATION.md)
+
+## MORE
+
+[MQTT Programming In Depth](http://programmingwithreason.com/article-mqtt-in-depth.html)
